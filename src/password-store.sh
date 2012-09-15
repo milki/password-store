@@ -336,7 +336,30 @@ case "$command" in
 		fi
 		;;
 	git)
-		if [[ $1 == "init" ]] || [[ -d $GITDIR ]]; then
+		if [[ $1 == "init" ]]; then
+			username=$2
+			useremail=$3
+
+			$GIT init
+
+			if [ -z "$username" ]; then
+			    current=$($GIT config user.name)
+			    prompt="Set your git user.name: "
+			    read -e -i "$current" -p "$prompt" username
+                username="${username:-$username}"
+			fi
+			if [ -z "$useremail" ]; then
+			    current=$($GIT config user.email)
+			    prompt="Set your git user.email: "
+			    read -e -i "$current" -p "$prompt" useremail
+                useremail="${useremail:-$useremail}"
+			fi
+			$GIT config user.name "$username"
+			$GIT config user.email "$useremail"
+			echo .gpg-id > $PREFIX/.gitignore
+			$GIT add .
+			$GIT commit -m "Adding existing passwords to the store."
+		elif [[ -d $GITDIR ]]; then
 			exec $GIT "$@"
 		else
 			echo "Error: the password store is not a git repository."

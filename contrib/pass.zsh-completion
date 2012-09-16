@@ -27,9 +27,6 @@ _pass () {
       "generate[Generate a new password using pwgen]" \
       "edit[Edit a password with \$EDITOR]" \
       "rm[Remove the password]" \
-      "push[push the latest changes using git-push(1)]" \
-      "pull[pull the latest changes using git-pull(1)]" \
-      "git[Call git]" \
       "help[Help]"
     _pass_cmd_show
   fi
@@ -75,6 +72,6 @@ _pass_cmd_rm () {
 }
 
 _get_stored_pwd () {
-  compadd `find ~/.password-store \( -name .git -o -name .gpg-id \) -prune -o -type f -print | sed 's#.*\.password-store*.##'| sed 's#\.gpg##' | sort`
+  compadd `find ~/.password-store \( -name .gpg-id \) -prune -o -type f -print | sed 's#.*\.password-store*.##'| sed 's#\.gpg##' | sort`
 
 }

@@ -7,16 +7,11 @@ umask 077
 
 PREFIX="${PASSWORD_STORE_DIR:-$HOME/.password-store}"
 ID="$PREFIX/.gpg-id"
-GITDIR="$PREFIX/.git"
 GPG_OPTS="--quiet --yes --batch"
 GETOPT=/usr/local/bin/getopt
 GPG=gpg2
-GIT=git
 XCLIP=xclip
 BASE64=base64
-
-export GIT_DIR="$GITDIR"
-export GIT_WORK_TREE="$PREFIX"
 
 version() {
 	cat <<_EOF
@@ -53,13 +48,6 @@ Usage:
         Optionally put it on the clipboard and clear board after 45 seconds.
     $program rm pass-name
         Remove existing password.
-    $program push
-        If the password store is a git repository, push the latest changes.
-    $program pull
-        If the password store is a git repository, pull the latest changes.
-    $program git git-command-args...
-        If the password store is a git repository, execute a git command
-        specified by git-command-args.
     $program help
         Show this text.
     $program version
@@ -68,7 +56,7 @@ _EOF
 }
 isCommand() {
 	case "$1" in
-		init|ls|list|show|insert|edit|generate|remove|rm|delete|push|pull|git|help|--help|version|--version) return 0 ;;
+		init|ls|list|show|insert|edit|generate|remove|rm|delete|help|--help|version|--version) return 0 ;;
 		*) return 1 ;;
 	esac
 }
@@ -224,10 +212,6 @@ case "$command" in
 			read -p "Enter password for $path: " -e password
 			$GPG -e -r "$ID" -o "$passfile" $GPG_OPTS <<<"$password"
 		fi
-		if [[ -d $GITDIR ]]; then
-			$GIT add "$passfile"
-			$GIT commit -m "Added given password for $path to store."
-		fi
 		;;
 	edit)
 		if [[ $# -ne 1 ]]; then
@@ -265,11 +249,6 @@ case "$command" in
 			echo "GPG encryption failed. Retrying."
 			sleep 1
 		done
-
-		if [[ -d $GITDIR ]]; then
-			$GIT add "$passfile"
-			$GIT commit -m "$action password for $path using ${EDITOR:-vi}."
-		fi
 		;;
 	generate)
 		clip=0
@@ -298,11 +277,6 @@ case "$command" in
 		pass="$(pwgen -s $symbols $length 1)"
 		passfile="$PREFIX/$path.gpg"
 		$GPG -e -r "$ID" -o "$passfile" $GPG_OPTS <<<"$pass"
-		if [[ -d $GITDIR ]]; then
-			$GIT add "$passfile"
-			$GIT commit -m "Added generated password for $path to store."
-		fi
-		
 		if [ $clip -eq 0 ]; then
 			echo "The generated password to $path is:"
 			echo "$pass"
@@ -322,49 +296,6 @@ case "$command" in
 			exit 1
 		fi
 		rm -i -v "$passfile"
-		if [[ -d $GITDIR ]] && ! [[ -f $passfile ]]; then
-			$GIT rm -f "$passfile"
-			$GIT commit -m "Removed $path from store."
-		fi
-		;;
-	push|pull)
-		if [[ -d $GITDIR ]]; then
-			exec $GIT $command "$@"
-		else
-			echo "Error: the password store is not a git repository."
-			exit 1
-		fi
-		;;
-	git)
-		if [[ $1 == "init" ]]; then
-			username=$2
-			useremail=$3
-
-			$GIT init
-
-			if [ -z "$username" ]; then
-			    current=$($GIT config user.name)
-			    prompt="Set your git user.name: "
-			    read -e -i "$current" -p "$prompt" username
-                username="${username:-$username}"
-			fi
-			if [ -z "$useremail" ]; then
-			    current=$($GIT config user.email)
-			    prompt="Set your git user.email: "
-			    read -e -i "$current" -p "$prompt" useremail
-                useremail="${useremail:-$useremail}"
-			fi
-			$GIT config user.name "$username"
-			$GIT config user.email "$useremail"
-			echo .gpg-id > $PREFIX/.gitignore
-			$GIT add .
-			$GIT commit -m "Adding existing passwords to the store."
-		elif [[ -d $GITDIR ]]; then
-			exec $GIT "$@"
-		else
-			echo "Error: the password store is not a git repository."
-			exit 1
-		fi
 		;;
 	*)
 		usage

@@ -15,7 +15,6 @@ Please see the man page for documentation and examples.
 Depends on:
 - gpg2
 - git
-- xclip
 - pwgen
 - tree
 - GNU getopt

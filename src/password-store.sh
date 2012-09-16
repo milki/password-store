@@ -12,8 +12,6 @@ GPG_OPTS="--quiet --yes --batch"
 GETOPT=/usr/local/bin/getopt
 GPG=gpg2
 GIT=git
-XCLIP=xclip
-BASE64=base64
 
 export GIT_DIR="$GITDIR"
 export GIT_WORK_TREE="$PREFIX"
@@ -39,18 +37,16 @@ Usage:
         Initialize new password storage and use gpg-id for encryption.
     $program [ls] [subfolder]
         List passwords.
-    $program [show] [--clip,-c] pass-name
-        Show existing password and optionally put it on the clipboard.
-        If put on the clipboard, it will be cleared in 45 seconds.
+    $program [show] pass-name
+        Show existing password
     $program insert [--no-echo,-n | --multiline,-m] [--force,-f] pass-name
         Insert new password. Optionally, the console can be enabled to not
         echo the password back. Or, optionally, it may be multiline. Prompt
         before overwriting existing password unless forced.
     $program edit pass-name
         Insert a new password or edit an existing password using ${EDITOR:-vi}.
-    $program generate [--no-symbols,-n] [--clip,-c] pass-name pass-length
+    $program generate [--no-symbols,-n] pass-name pass-length
         Generate a new password of pass-length with optionally no symbols.
-        Optionally put it on the clipboard and clear board after 45 seconds.
     $program rm pass-name
         Remove existing password.
     $program push
@@ -71,28 +67,6 @@ isCommand() {
 		init|ls|list|show|insert|edit|generate|remove|rm|delete|push|pull|git|help|--help|version|--version) return 0 ;;
 		*) return 1 ;;
 	esac
-}
-clip() {
-	# This base64 business is a disgusting hack to deal with newline inconsistancies
-	# in shell. There must be a better way to deal with this, but because I'm a dolt,
-	# we're going with this for now.
-
-	before="$($XCLIP -o -selection clipboard | $BASE64)"
-	echo -n "$1" | $XCLIP -selection clipboard
-	(
-		sleep 45
-		now="$($XCLIP -o -selection clipboard | $BASE64)"
-		if [[ $now != $(echo -n "$1" | $BASE64) ]]; then
-			before="$now"
-		fi
-		# It might be nice to programatically check to see if klipper exists,
-		# as well as checking for other common clipboard managers. But for now,
-		# this works fine. Clipboard managers frequently write their history
-		# out in plaintext, so we axe it here.
-		qdbus org.kde.klipper /klipper org.kde.klipper.klipper.clearClipboardHistory >/dev/null 2>&1
-		echo "$before" | $BASE64 -d | $XCLIP -selection clipboard
-	) & disown
-	echo "Copied $2 to clipboard. Will clear in 45 seconds."
 }
 program="$(basename "$0")"
 command="$1"
@@ -137,18 +111,10 @@ fi
 
 case "$command" in
 	show|ls|list)
-		clip=0
-
-		opts="$($GETOPT -o c -l clip -n $program -- "$@")"
 		err=$?
-		eval set -- "$opts"
-		while true; do case $1 in
-			-c|--clip) clip=1; shift ;;
-			--) shift; break ;;
-		esac done
 
 		if [[ $err -ne 0 ]]; then
-			echo "Usage: $program $command [--clip,-c] [pass-name]"
+			echo "Usage: $program $command [pass-name]"
 			exit 1
 		fi
 
@@ -166,11 +132,7 @@ case "$command" in
 				echo "$path is not in the password store."
 				exit 1
 			fi
-			if [ $clip -eq 0 ]; then
-				exec $GPG -q -d --yes --batch "$passfile"
-			else
-				clip "$($GPG -q -d --yes --batch "$passfile" | head -n 1)" "$path"
-			fi
+		    exec $GPG -q -d --yes --batch "$passfile"
 		fi
 		;;
 	insert)
@@ -272,20 +234,18 @@ case "$command" in
 		fi
 		;;
 	generate)
-		clip=0
 		symbols="-y"
 
-		opts="$($GETOPT -o nc -l no-symbols,clip -n $program -- "$@")"
+		opts="$($GETOPT -o nc -l no-symbols -n $program -- "$@")"
 		err=$?
 		eval set -- "$opts"
 		while true; do case $1 in
 			-n|--no-symbols) symbols=""; shift ;;
-			-c|--clip) clip=1; shift ;;
 			--) shift; break ;;
 		esac done
 
 		if [[ $err -ne 0 || $# -ne 2 ]]; then
-			echo "Usage: $program $command [--no-symbols,-n] [--clip,-c] pass-name pass-length"
+			echo "Usage: $program $command [--no-symbols,-n] pass-name pass-length"
 			exit 1
 		fi
 		path="$1"
@@ -302,13 +262,8 @@ case "$command" in
 			$GIT add "$passfile"
 			$GIT commit -m "Added generated password for $path to store."
 		fi
-		
-		if [ $clip -eq 0 ]; then
-			echo "The generated password to $path is:"
-			echo "$pass"
-		else
-			clip "$pass" "$path"
-		fi
+		echo "The generated password to $path is:"
+		echo "$pass"
 		;;
 	delete|rm|remove)
 		if [[ $# -ne 1 ]]; then

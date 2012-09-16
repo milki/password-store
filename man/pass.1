@@ -34,13 +34,6 @@ or
 depending on the type of specifier in ARGS. Otherwise COMMAND must be one of
 the valid commands listed below.
 
-Several of the commands below rely on or provide additional functionality if
-the password store directory is also a git repository. If the password store
-directory is a git repository, all password store modification commands will
-cause a corresponding git commit. See the \fIEXAMPLES\fP section for an
-extended description using \fBinit\fP and
-.BR git (1).
-
 The \fBinit\fP command must be run before other commands in order to initialize
 the password store with the correct gpg key id.
 
@@ -101,19 +94,6 @@ and then restore the clipboard after 45 seconds.
 \fBrm\fP \fIpass-name\fP
 Remove the password named \fIpass-name\fP from the password store. This command is
 alternatively named \fBremove\fP.
-.TP
-\fBpush\fP
-If the password store is a git repository, push the latest changes using
-.BR git-push (1).
-.TP
-\fBpull\fP
-If the password store is a git repository, pull the latest changes using
-.BR git-pull (1).
-.TP
-\fBgit\fP \fIgit-command-args\fP...
-If the password store is a git repository, pass \fIgit-command-args\fP as arguments to
-.BR git (1)
-using the password store as the git repository.
 .TP
 \fBhelp\fP
 Show usage message.
@@ -220,22 +200,14 @@ rm: remove regular file \[u2018]/home/zx2c4/.password-store/Business/cheese-whiz
 .br
 removed \[u2018]/home/zx2c4/.password-store/Business/cheese-whiz-factory.gpg\[u2019]
 
-.SH EXTENDED GIT EXAMPLE
-Here, we initialize new password store, create a git repository, and then manipulate and sync passwords. Make note of the arguments to the first call of \fBpass push\fP; consult
-.BR git-push (1)
-for more information.
+.SH EXTENDED EXAMPLE
+Here, we initialize new password store, and then manipulate and sync passwords.
 
 .B zx2c4@laptop ~ $ pass init Jason@zx2c4.com 
 .br
 mkdir: created directory \[u2018]/home/zx2c4/.password-store\[u2019] 
 .br
 Password store initialized for Jason@zx2c4.com. 
-
-.B zx2c4@laptop ~ $ pass git init 
-.br
-Initialized empty Git repository in /home/zx2c4/.password-store/.git/ 
-
-.B zx2c4@laptop ~ $ pass git remote add origin kexec.com:pass-store 
 
 .B zx2c4@laptop ~ $ pass generate Amazon/amazonemail@email.com 21 
 .br
@@ -250,24 +222,6 @@ create mode 100644 Amazon/amazonemail@email.com.gpg
 The generated password to Amazon/amazonemail@email.com is: 
 .br
 <5m,_BrZY`antNDxKN<0A 
-
-.B zx2c4@laptop ~ $ pass push -u --all 
-.br
-Counting objects: 4, done. 
-.br
-Delta compression using up to 2 threads. 
-.br
-Compressing objects: 100% (3/3), done. 
-.br
-Writing objects: 100% (4/4), 921 bytes, done. 
-.br
-Total 4 (delta 0), reused 0 (delta 0) 
-.br
-To kexec.com:pass-store 
-.br
-* [new branch]      master -> master 
-.br
-Branch master set up to track remote branch master from origin. 
 
 .B zx2c4@laptop ~ $ pass insert Amazon/otheraccount@email.com 
 .br
@@ -293,20 +247,6 @@ rm 'Amazon/amazonemail@email.com.gpg'
 .br
 delete mode 100644 Amazon/amazonemail@email.com.gpg 
 
-.B zx2c4@laptop ~ $ pass push 
-.br
-Counting objects: 9, done. 
-.br
-Delta compression using up to 2 threads. 
-.br
-Compressing objects: 100% (5/5), done. 
-.br
-Writing objects: 100% (7/7), 1.25 KiB, done. 
-.br
-Total 7 (delta 0), reused 0 (delta 0) 
-.br
-To kexec.com:pass-store
-
 .SH FILES
 
 .TP
@@ -320,7 +260,6 @@ be set using the \fBinit\fP command.
 .SH SEE ALSO
 .BR gpg (1),
 .BR pwgen (1),
-.BR git (1),
 .BR xclip (1).
 
 .SH AUTHOR

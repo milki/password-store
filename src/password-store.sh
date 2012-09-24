@@ -107,22 +107,24 @@ clip() {
 	) & disown
 	echo "Copied $2 to clipboard. Will clear in 45 seconds."
 }
+
 tmpdir() {
-	if [[ -d /dev/shm && -w /dev/shm && -x /dev/shm ]]; then
-		tmp_dir="$(TMPDIR=/dev/shm mktemp -t "$template" -d)"
+	ramdisk="/var/tmp/password-store.ramdisk"
+	if [[ -d $ramdisk && -w $ramdisk && -x $ramdisk ]]; then
+		tmp_dir="$(TMPDIR=$ramdisk mktemp -t "$template" -d)"
 	else
-		yesno "$(echo    "Your system does not have /dev/shm, which means that it may"
-		         echo    "be difficult to entirely erase the temporary non-encrypted"
-		         echo    "password file after editing. Are you sure you would like to"
-		         echo -n "continue?")"
+		yesno "$(echo    "A ramdisk does not exist at $ramdisk, which means that it may"
+			 echo    "be difficult to entirely erase the temporary non-encrypted"
+			 echo    "password file after editing. Are you sure you would like to"
+			 echo -n "continue?")"
+
 		tmp_dir="$(mktemp -t "$template" -d)"
 	fi
-
 }
-GPG="gpg"
-GETOPT="getopt"
 
-# source /path/to/platform-defined-functions
+GPG="gpg2"
+GETOPT="/usr/local/bin/getopt"
+
 #
 # END Platform definable
 #

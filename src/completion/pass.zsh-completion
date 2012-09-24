@@ -41,8 +41,6 @@ _pass () {
 				_arguments : \
 					"-n[don't include symbols in password]" \
 					"--no-symbols[don't include symbols in password]" \
-					"-c[copy password to the clipboard]" \
-					"--clip[copy password to the clipboard]" \
 					"-f[force overwrite]" \
 					"--force[force overwrite]" \
 					"-i[replace first line]" \
@@ -106,9 +104,6 @@ _pass () {
 }
 
 _pass_cmd_show () {
-	_arguments : \
-		"-c[put it on the clipboard]" \
-		"--clip[put it on the clipboard]"
 	_pass_complete_entries
 }
 _pass_complete_entries_helper () {

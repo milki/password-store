@@ -62,7 +62,7 @@ _pass()
 {
 	COMPREPLY=()
 	local cur="${COMP_WORDS[COMP_CWORD]}"
-	local commands="init ls find grep show insert generate edit rm mv cp git help version"
+	local commands="init ls find grep show insert generate edit rm mv cp help version"
 	if [[ $COMP_CWORD -gt 1 ]]; then
 		local lastarg="${COMP_WORDS[$COMP_CWORD-1]}"
 		case "${COMP_WORDS[1]}" in
@@ -96,9 +96,6 @@ _pass()
 			rm|remove|delete)
 				COMPREPLY+=($(compgen -W "-r --recursive -f --force" -- ${cur}))
 				_pass_complete_entries
-				;;
-			git)
-				COMPREPLY+=($(compgen -W "init push pull config log reflog rebase" -- ${cur}))
 				;;
 		esac
 	else

@@ -15,25 +15,10 @@ PREFIX="${PASSWORD_STORE_DIR:-$HOME/.password-store}"
 X_SELECTION="${PASSWORD_STORE_X_SELECTION:-clipboard}"
 CLIP_TIME="${PASSWORD_STORE_CLIP_TIME:-45}"
 
-export GIT_DIR="${PASSWORD_STORE_GIT:-$PREFIX}/.git"
-export GIT_WORK_TREE="${PASSWORD_STORE_GIT:-$PREFIX}"
-
 #
 # BEGIN helper functions
 #
 
-git_add_file() {
-	[[ -d $GIT_DIR ]] || return
-	git add "$1" || return
-	[[ -n $(git status --porcelain "$1") ]] || return
-	git_commit "$2"
-}
-git_commit() {
-	local sign=""
-	[[ -d $GIT_DIR ]] || return
-	[[ $(git config --bool --get pass.signcommits) == "true" ]] && sign="-S"
-	git commit $sign -m "$1"
-}
 yesno() {
 	[[ -t 0 ]] || return 0
 	local response
@@ -254,9 +239,6 @@ cmd_usage() {
 	        Renames or moves old-path to new-path, optionally forcefully, selectively reencrypting.
 	    $PROGRAM cp [--force,-f] old-path new-path
 	        Copies old-path to new-path, optionally forcefully, selectively reencrypting.
-	    $PROGRAM git git-command-args...
-	        If the password store is a git repository, execute a git command
-	        specified by git-command-args.
 	    $PROGRAM help
 	        Show this text.
 	    $PROGRAM version
@@ -285,22 +267,16 @@ cmd_init() {
 	if [[ $# -eq 1 && -z $1 ]]; then
 		[[ ! -f "$gpg_id" ]] && die "Error: $gpg_id does not exist and so cannot be removed."
 		rm -v -f "$gpg_id" || exit 1
-		if [[ -d $GIT_DIR ]]; then
-			git rm -qr "$gpg_id"
-			git_commit "Deinitialize ${gpg_id}."
-		fi
 		rmdir -p "${gpg_id%/*}" 2>/dev/null
 	else
 		mkdir -v -p "$PREFIX/$id_path"
 		printf "%s\n" "$@" > "$gpg_id"
 		local id_print="$(printf "%s, " "$@")"
 		echo "Password store initialized for ${id_print%, }"
-		git_add_file "$gpg_id" "Set GPG id to ${id_print%, }."
 	fi
 
 	agent_check
 	reencrypt_path "$PREFIX/$id_path"
-	git_add_file "$PREFIX/$id_path" "Reencrypt password store using new GPG id ${id_print%, }."
 }
 
 cmd_show() {
@@ -408,7 +384,6 @@ cmd_insert() {
 		read -r -p "Enter password for $path: " -e password
 		$GPG -e "${GPG_RECIPIENT_ARGS[@]}" -o "$passfile" "${GPG_OPTS[@]}" <<<"$password"
 	fi
-	git_add_file "$passfile" "Add given password for $path to store."
 }
 
 cmd_edit() {
@@ -434,7 +409,6 @@ cmd_edit() {
 	while ! $GPG -e "${GPG_RECIPIENT_ARGS[@]}" -o "$passfile" "${GPG_OPTS[@]}" "$tmp_file"; do
 		yesno "GPG encryption failed. Would you like to try again?"
 	done
-	git_add_file "$passfile" "$action password for $path using ${EDITOR:-vi}."
 }
 
 cmd_generate() {
@@ -476,7 +450,6 @@ cmd_generate() {
 	fi
 	local verb="Add"
 	[[ $inplace -eq 1 ]] && verb="Replace"
-	git_add_file "$passfile" "$verb generated password for ${path}."
 
 	if [[ $clip -eq 0 ]]; then
 		printf "\e[1m\e[37mThe generated password for \e[4m%s\e[24m is:\e[0m\n\e[1m\e[93m%s\e[0m\n" "$path" "$pass"
@@ -508,10 +481,6 @@ cmd_delete() {
 	[[ $force -eq 1 ]] || yesno "Are you sure you would like to delete $path?"
 
 	rm $recursive -f -v "$passfile"
-	if [[ -d $GIT_DIR && ! -e $passfile ]]; then
-		git rm -qr "$passfile"
-		git_commit "Remove $path from store."
-	fi
 	rmdir -p "${passfile%/*}" 2>/dev/null
 }
 
@@ -548,33 +517,10 @@ cmd_copy_move() {
 		mv $interactive -v "$old_path" "$new_path" || exit 1
 		[[ -e "$new_path" ]] && reencrypt_path "$new_path"
 
-		if [[ -d $GIT_DIR && ! -e $old_path ]]; then
-			git rm -qr "$old_path"
-			git_add_file "$new_path" "Rename ${1} to ${2}."
-		fi
 		rmdir -p "$old_dir" 2>/dev/null
 	else
 		cp $interactive -r -v "$old_path" "$new_path" || exit 1
 		[[ -e "$new_path" ]] && reencrypt_path "$new_path"
-		git_add_file "$new_path" "Copy ${1} to ${2}."
-	fi
-}
-
-cmd_git() {
-	if [[ $1 == "init" ]]; then
-		git "$@" || exit 1
-		git_add_file "$PREFIX" "Add current contents of password store."
-
-		echo '*.gpg diff=gpg' > "$PREFIX/.gitattributes"
-		git_add_file .gitattributes "Configure git repository for gpg file diff."
-		git config --local diff.gpg.binary true
-		git config --local diff.gpg.textconv "$GPG -d ${GPG_OPTS[*]}"
-	elif [[ -d $GIT_DIR ]]; then
-		tmpdir nowarn #Defines $SECURE_TMPDIR. We don't warn, because at most, this only copies encrypted files.
-		export TMPDIR="$SECURE_TMPDIR"
-		git "$@"
-	else
-		die "Error: the password store is not a git repository. Try \"$PROGRAM git init\"."
 	fi
 }
 
@@ -598,7 +544,6 @@ case "$1" in
 	delete|rm|remove) shift;	cmd_delete "$@" ;;
 	rename|mv) shift;		cmd_copy_move "move" "$@" ;;
 	copy|cp) shift;			cmd_copy_move "copy" "$@" ;;
-	git) shift;			cmd_git "$@" ;;
 	*) COMMAND="show";		cmd_show "$@" ;;
 esac
 exit 0

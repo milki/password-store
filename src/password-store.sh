@@ -7,11 +7,7 @@ umask 077
 
 PREFIX="${PASSWORD_STORE_DIR:-$HOME/.password-store}"
 ID="$PREFIX/.gpg-id"
-GIT_DIR="${PASSWORD_STORE_GIT:-$PREFIX}/.git"
 GPG_OPTS="--quiet --yes --batch"
-
-export GIT_DIR
-export GIT_WORK_TREE="${PASSWORD_STORE_GIT:-$PREFIX}"
 
 version() {
 	cat <<_EOF
@@ -50,9 +46,6 @@ Usage:
         Prompt before overwriting existing password unless forced.
     $program rm [--recursive,-r] [--force,-f] pass-name
         Remove existing password or directory, optionally forcefully.
-    $program git git-command-args...
-        If the password store is a git repository, execute a git command
-        specified by git-command-args.
     $program help
         Show this text.
     $program version
@@ -63,15 +56,9 @@ _EOF
 }
 is_command() {
 	case "$1" in
-		init|ls|list|show|insert|edit|generate|remove|rm|delete|git|help|--help|version|--version) return 0 ;;
+		init|ls|list|show|insert|edit|generate|remove|rm|delete|help|--help|version|--version) return 0 ;;
 		*) return 1 ;;
 	esac
-}
-git_add_file() {
-	[[ -d $GIT_DIR ]] || return
-	git add "$1" || return
-	[[ -n $(git status --porcelain "$1") ]] || return
-	git commit -m "$2"
 }
 yesno() {
 	read -p "$1 [y/N] " response
@@ -158,14 +145,12 @@ case "$command" in
 		mkdir -v -p "$PREFIX"
 		echo "$gpg_id" > "$ID"
 		echo "Password store initialized for $gpg_id."
-		git_add_file "$ID" "Set GPG id to $gpg_id."
 
 		if [[ $reencrypt -eq 1 ]]; then
 			find "$PREFIX" -iname '*.gpg' | while read passfile; do
 				$GPG -d $GPG_OPTS "$passfile" | $GPG -e -r "$gpg_id" -o "$passfile.new" $GPG_OPTS &&
 				mv -v "$passfile.new" "$passfile"
 			done
-			git_add_file "$PREFIX" "Reencrypted entire store using new GPG id $gpg_id."
 		fi
 		exit 0
 		;;
@@ -277,7 +262,6 @@ case "$command" in
 			read -p "Enter password for $path: " -e password
 			$GPG -e -r "$ID" -o "$passfile" $GPG_OPTS <<<"$password"
 		fi
-		git_add_file "$passfile" "Added given password for $path to store."
 		;;
 	edit)
 		if [[ $# -ne 1 ]]; then
@@ -305,7 +289,6 @@ case "$command" in
 			echo "GPG encryption failed. Retrying."
 			sleep 1
 		done
-		git_add_file "$passfile" "$action password for $path using ${EDITOR:-vi}."
 		;;
 	generate)
 		clip=0
@@ -340,7 +323,6 @@ case "$command" in
 		pass="$(pwgen -s $symbols $length 1)"
 		[[ -n $pass ]] || exit 1
 		$GPG -e -r "$ID" -o "$passfile" $GPG_OPTS <<<"$pass"
-		git_add_file "$passfile" "Added generated password for $path to store."
 		
 		if [[ $clip -eq 0 ]]; then
 			echo "The generated password to $path is:"
@@ -379,21 +361,6 @@ case "$command" in
 		[[ $force -eq 1 ]] || yesno "Are you sure you would like to delete $path?"
 
 		rm $recursive -f -v "$passfile"
-		if [[ -d $GIT_DIR && ! -e $passfile ]]; then
-			git rm -qr "$passfile"
-			git commit -m "Removed $path from store."
-		fi
-		;;
-	git)
-		if [[ $1 == "init" ]]; then
-			git "$@" || exit 1
-			git_add_file "$PREFIX" "Added current contents of password store."
-		elif [[ -d $GIT_DIR ]]; then
-			exec git "$@"
-		else
-			echo "Error: the password store is not a git repository."
-			exit 1
-		fi
 		;;
 	*)
 		usage

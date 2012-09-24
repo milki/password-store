@@ -109,10 +109,6 @@ outputs error message on failure."
                        entry
                        new-entry))
 
-(defun password-store--run-git (&rest args)
-  (apply 'password-store--run "git"
-         args))
-
 (defun password-store--run-version ()
   (password-store--run "version"))
 

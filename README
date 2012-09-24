@@ -17,8 +17,6 @@ Depends on:
   http://www.gnu.org/software/bash/
 - GnuPG2
   http://www.gnupg.org/
-- git
-  http://www.git-scm.com/
 - xclip
   http://sourceforge.net/projects/xclip/
 - pwgen

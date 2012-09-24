@@ -105,14 +105,5 @@ complete -c $PROG -f -A -n '__fish_pass_needs_command' -a "(__fish_pass_print_en
 complete -c $PROG -f -A -n '__fish_pass_uses_command -c' -a "(__fish_pass_print_entries)"
 complete -c $PROG -f -A -n '__fish_pass_uses_command --clip' -a "(__fish_pass_print_entries)"
 
-complete -c $PROG -f -A -n '__fish_pass_needs_command' -a git -d 'Command: execute a git command'
-complete -c $PROG -f -A -n '__fish_pass_uses_command git' -a 'init' -d 'Initialize git repository'
-complete -c $PROG -f -A -n '__fish_pass_uses_command git' -a 'status' -d 'Show status of the repo'
-complete -c $PROG -f -A -n '__fish_pass_uses_command git' -a 'add' -d 'Add changes to the index'
-complete -c $PROG -f -A -n '__fish_pass_uses_command git' -a 'commit' -d 'Commit changes to the repo'
-complete -c $PROG -f -A -n '__fish_pass_uses_command git' -a 'push' -d 'Push changes to remote repo'
-complete -c $PROG -f -A -n '__fish_pass_uses_command git' -a 'pull' -d 'Pull changes from remote repo'
-complete -c $PROG -f -A -n '__fish_pass_uses_command git' -a 'log' -d 'View changelog'
-
 complete -c $PROG -f -A -n '__fish_pass_needs_command' -a find -d 'Command: find a password file or directory matching pattern'
 complete -c $PROG -f -A -n '__fish_pass_needs_command' -a grep -d 'Command: search inside of decrypted password files for matching pattern'

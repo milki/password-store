@@ -63,18 +63,6 @@ _pass () {
 					"--recursive[recursively delete]"
 					_pass_complete_entries_with_subdirs
 				;;
-			git)
-				local -a subcommands
-				subcommands=(
-					"init:Initialize git repository"
-					"push:Push to remote repository"
-					"pull:Pull from remote repository"
-					"config:Show git config"
-					"log:Show git log"
-					"reflog:Show git reflog"
-				)
-				_describe -t commands 'pass git' subcommands
-				;;
 			show|*)
 				_pass_cmd_show
 				;;
@@ -93,7 +81,6 @@ _pass () {
 			"mv:Rename the password"
 			"cp:Copy the password"
 			"rm:Remove the password"
-			"git:Call git on the password store"
 			"version:Output version information"
 			"help:Output help message"
 		)
@@ -114,7 +101,7 @@ _pass_cmd_show () {
 _pass_complete_entries_helper () {
 	local IFS=$'\n'
 	local prefix="${PASSWORD_STORE_DIR:-$HOME/.password-store}"
-	_values -C 'passwords' $(find -L "$prefix" \( -name .git -o -name .gpg-id \) -prune -o $@ -print | sed -e "s#${prefix}/\{0,1\}##" -e 's#\.gpg##' | sort)
+	_values -C 'passwords' $(find -L "$prefix" -name .gpg-id -prune -o $@ -print | sed -e "s#${prefix}/\{0,1\}##" -e 's#\.gpg##' | sort)
 }
 
 _pass_complete_entries_with_subdirs () {

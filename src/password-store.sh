@@ -12,8 +12,6 @@ which gpg2 &>/dev/null && GPG="gpg2"
 [[ -n $GPG_AGENT_INFO || $GPG == "gpg2" ]] && GPG_OPTS+=( "--batch" "--use-agent" )
 
 PREFIX="${PASSWORD_STORE_DIR:-$HOME/.password-store}"
-X_SELECTION="${PASSWORD_STORE_X_SELECTION:-clipboard}"
-CLIP_TIME="${PASSWORD_STORE_CLIP_TIME:-45}"
 
 #
 # BEGIN helper functions
@@ -120,33 +118,6 @@ check_sneaky_paths() {
 # BEGIN platform definable
 #
 
-clip() {
-	# This base64 business is because bash cannot store binary data in a shell
-	# variable. Specifically, it cannot store nulls nor (non-trivally) store
-	# trailing new lines.
-
-	local sleep_argv0="password store sleep on display $DISPLAY"
-	pkill -f "^$sleep_argv0" 2>/dev/null && sleep 0.5
-	local before="$(xclip -o -selection "$X_SELECTION" | base64)"
-	echo -n "$1" | xclip -selection "$X_SELECTION"
-	(
-		( exec -a "$sleep_argv0" sleep "$CLIP_TIME" )
-		local now="$(xclip -o -selection "$X_SELECTION" | base64)"
-		[[ $now != $(echo -n "$1" | base64) ]] && before="$now"
-
-		# It might be nice to programatically check to see if klipper exists,
-		# as well as checking for other common clipboard managers. But for now,
-		# this works fine -- if qdbus isn't there or if klipper isn't running,
-		# this essentially becomes a no-op.
-		#
-		# Clipboard managers frequently write their history out in plaintext,
-		# so we axe it here:
-		qdbus org.kde.klipper /klipper org.kde.klipper.klipper.clearClipboardHistory &>/dev/null
-
-		echo "$before" | base64 -d | xclip -selection "$X_SELECTION"
-	) 2>/dev/null & disown
-	echo "Copied $2 to clipboard. Will clear in $CLIP_TIME seconds."
-}
 tmpdir() {
 	[[ -n $SECURE_TMPDIR ]] && return
 	local warn=1
@@ -217,9 +188,8 @@ cmd_usage() {
 	        List passwords.
 	    $PROGRAM find pass-names...
 	    	List passwords that match pass-names.
-	    $PROGRAM [show] [--clip,-c] pass-name
-	        Show existing password and optionally put it on the clipboard.
-	        If put on the clipboard, it will be cleared in $CLIP_TIME seconds.
+	    $PROGRAM [show] pass-name
+	        Show existing password.
 	    $PROGRAM grep search-string
 	        Search for password files containing search-string when decrypted.
 	    $PROGRAM insert [--echo,-e | --multiline,-m] [--force,-f] pass-name
@@ -228,9 +198,8 @@ cmd_usage() {
 	        overwriting existing password unless forced.
 	    $PROGRAM edit pass-name
 	        Insert a new password or edit an existing password using ${EDITOR:-vi}.
-	    $PROGRAM generate [--no-symbols,-n] [--clip,-c] [--in-place,-i | --force,-f] pass-name pass-length
+	    $PROGRAM generate [--no-symbols,-n] [--in-place,-i | --force,-f] pass-name pass-length
 	        Generate a new password of pass-length with optionally no symbols.
-	        Optionally put it on the clipboard and clear board after 45 seconds.
 	        Prompt before overwriting existing password unless forced.
 	        Optionally replace only the first line of an existing file with a new password.
 	    $PROGRAM rm [--recursive,-r] [--force,-f] pass-name
@@ -280,28 +249,11 @@ cmd_init() {
 }
 
 cmd_show() {
-	local opts clip=0
-	opts="$($GETOPT -o c -l clip -n "$PROGRAM" -- "$@")"
-	local err=$?
-	eval set -- "$opts"
-	while true; do case $1 in
-		-c|--clip) clip=1; shift ;;
-		--) shift; break ;;
-	esac done
-
-	[[ $err -ne 0 ]] && die "Usage: $PROGRAM $COMMAND [--clip,-c] [pass-name]"
-
 	local path="$1"
 	local passfile="$PREFIX/$path.gpg"
 	check_sneaky_paths "$path"
 	if [[ -f $passfile ]]; then
-		if [[ $clip -eq 0 ]]; then
 			exec $GPG -d "${GPG_OPTS[@]}" "$passfile"
-		else
-			local pass="$($GPG -d "${GPG_OPTS[@]}" "$passfile" | head -n 1)"
-			[[ -n $pass ]] || exit 1
-			clip "$pass" "$path"
-		fi
 	elif [[ -d $PREFIX/$path ]]; then
 		if [[ -z $path ]]; then
 			echo "Password Store"
@@ -412,19 +364,18 @@ cmd_edit() {
 }
 
 cmd_generate() {
-	local opts clip=0 force=0 symbols="-y" inplace=0
-	opts="$($GETOPT -o ncif -l no-symbols,clip,in-place,force -n "$PROGRAM" -- "$@")"
+	local opts force=0 symbols="-y" inplace=0
+	opts="$($GETOPT -o nif -l no-symbols,in-place,force -n "$PROGRAM" -- "$@")"
 	local err=$?
 	eval set -- "$opts"
 	while true; do case $1 in
 		-n|--no-symbols) symbols=""; shift ;;
-		-c|--clip) clip=1; shift ;;
 		-f|--force) force=1; shift ;;
 		-i|--in-place) inplace=1; shift ;;
 		--) shift; break ;;
 	esac done
 
-	[[ $err -ne 0 || $# -ne 2 || ( $force -eq 1 && $inplace -eq 1 ) ]] && die "Usage: $PROGRAM $COMMAND [--no-symbols,-n] [--clip,-c] [--in-place,-i | --force,-f] pass-name pass-length"
+	[[ $err -ne 0 || $# -ne 2 || ( $force -eq 1 && $inplace -eq 1 ) ]] && die "Usage: $PROGRAM $COMMAND [--no-symbols,-n] [--in-place,-i | --force,-f] pass-name pass-length"
 	local path="$1"
 	local length="$2"
 	check_sneaky_paths "$path"
@@ -451,11 +402,7 @@ cmd_generate() {
 	local verb="Add"
 	[[ $inplace -eq 1 ]] && verb="Replace"
 
-	if [[ $clip -eq 0 ]]; then
-		printf "\e[1m\e[37mThe generated password for \e[4m%s\e[24m is:\e[0m\n\e[1m\e[93m%s\e[0m\n" "$path" "$pass"
-	else
-		clip "$pass" "$path"
-	fi
+	printf "\e[1m\e[37mThe generated password for \e[4m%s\e[24m is:\e[0m\n\e[1m\e[93m%s\e[0m\n" "$path" "$pass"
 }
 
 cmd_delete() {

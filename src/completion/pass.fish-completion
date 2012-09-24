@@ -75,7 +75,6 @@ complete -c $PROG -f -A -n '__fish_pass_uses_command insert' -a "(__fish_pass_pr
 
 complete -c $PROG -f -A -n '__fish_pass_needs_command' -a generate -d 'Command: generate new password'
 complete -c $PROG -f -A -n '__fish_pass_uses_command generate' -s n -l no-symbols -d 'Do not use special symbols'
-complete -c $PROG -f -A -n '__fish_pass_uses_command generate' -s c -l clip -d 'Put the password in clipboard'
 complete -c $PROG -f -A -n '__fish_pass_uses_command generate' -s f -l force -d 'Do not prompt before overwritting'
 complete -c $PROG -f -A -n '__fish_pass_uses_command generate' -s i -l in-place -d 'Replace only the first line with the generated password'
 complete -c $PROG -f -A -n '__fish_pass_uses_command generate' -a "(__fish_pass_print_entry_dirs)"
@@ -97,13 +96,10 @@ complete -c $PROG -f -A -n '__fish_pass_needs_command' -a edit -d 'Command: edit
 complete -c $PROG -f -A -n '__fish_pass_uses_command edit' -a "(__fish_pass_print_entries)"
 
 complete -c $PROG -f -A -n '__fish_pass_needs_command' -a show -d 'Command: show existing password'
-complete -c $PROG -f -A -n '__fish_pass_uses_command show' -s c -l clip -d 'Put password in clipboard'
 complete -c $PROG -f -A -n '__fish_pass_uses_command show' -a "(__fish_pass_print_entries)"
 # When no command is given, `show` is defaulted.
-complete -c $PROG -f -A -n '__fish_pass_needs_command' -s c -l clip -d 'Put password in clipboard'
 complete -c $PROG -f -A -n '__fish_pass_needs_command' -a "(__fish_pass_print_entries)"
 complete -c $PROG -f -A -n '__fish_pass_uses_command -c' -a "(__fish_pass_print_entries)"
-complete -c $PROG -f -A -n '__fish_pass_uses_command --clip' -a "(__fish_pass_print_entries)"
 
 complete -c $PROG -f -A -n '__fish_pass_needs_command' -a find -d 'Command: find a password file or directory matching pattern'
 complete -c $PROG -f -A -n '__fish_pass_needs_command' -a grep -d 'Command: search inside of decrypted password files for matching pattern'

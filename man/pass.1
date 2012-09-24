@@ -86,12 +86,8 @@ List names of passwords inside the tree that match \fIpass-names\fP by using the
 .BR tree (1)
 program. This command is alternatively named \fBsearch\fP.
 .TP
-\fBshow\fP [ \fI--clip\fP, \fI-c\fP ] \fIpass-name\fP
-Decrypt and print a password named \fIpass-name\fP. If \fI--clip\fP or \fI-c\fP
-is specified, do not print the password but instead copy the first line to the
-clipboard using
-.BR xclip (1)
-and then restore the clipboard after 45 (or \fIPASSWORD_STORE_CLIP_TIME\fP) seconds.
+\fBshow\fP \fIpass-name\fP
+Decrypt and print a password named \fIpass-name\fP.
 .TP
 \fBinsert\fP [ \fI--echo\fP, \fI-e\fP | \fI--multiline\fP, \fI-m\fP ] [ \fI--force\fP, \fI-f\fP ] \fIpass-name\fP
 Insert a new password into the password store called \fIpass-name\fP. This will
@@ -110,15 +106,11 @@ ensure that temporary files are created in \fI/dev/shm\fP in order to avoid writ
 difficult-to-erase disk sectors. If \fI/dev/shm\fP is not accessible, fallback to
 the ordinary \fITMPDIR\fP location, and print a warning.
 .TP
-\fBgenerate\fP [ \fI--no-symbols\fP, \fI-n\fP ] [ \fI--clip\fP, \fI-c\fP ] [ \fI--in-place\fP, \fI-i\fP | \fI--force\fP, \fI-f\fP ] \fIpass-name pass-length\fP
+\fBgenerate\fP [ \fI--no-symbols\fP, \fI-n\fP ] [ \fI--in-place\fP, \fI-i\fP | \fI--force\fP, \fI-f\fP ] \fIpass-name pass-length\fP
 Generate a new password using
 .BR pwgen (1)
 of length \fIpass-length\fP and insert into \fIpass-name\fP. If \fI--no-symbols\fP or \fI-n\fP
 is specified, do not use any non-alphanumeric characters in the generated password.
-If \fI--clip\fP or \fI-c\fP is specified, do not print the password but instead copy
-it to the clipboard using
-.BR xclip (1)
-and then restore the clipboard after 45 (or \fIPASSWORD_STORE_CLIP_TIME\fP) seconds.
 Prompt before overwriting an existing password,
 unless \fI--force\fP or \fI-f\fP is specified. If \fI--in-place\fP or \fI-i\fP is
 specified, do not interactively prompt, and only replace the first line of the password
@@ -223,11 +215,6 @@ Show existing password
 .br
 sup3rh4x3rizmynam3 
 .TP
-Copy existing password to clipboard
-.B zx2c4@laptop ~ $ pass -c Email/zx2c4.com 
-.br
-Copied Email/jason@zx2c4.com to clipboard. Will clear in 45 seconds.
-.TP
 Add password to store
 .B zx2c4@laptop ~ $ pass insert Business/cheese-whiz-factory 
 .br
@@ -266,10 +253,8 @@ The generated password to Email/jasondonenfeld.com is:
 .br
 YqFsMkBeO6di
 .TP
-Generate new password and copy it to the clipboard
-.B zx2c4@laptop ~ $ pass generate -c Email/jasondonenfeld.com 19
-.br
-Copied Email/jasondonenfeld.com to clipboard. Will clear in 45 seconds.
+Generate new password
+.B zx2c4@laptop ~ $ pass generate Email/jasondonenfeld.com 19
 .TP
 Remove password from store
 .B zx2c4@laptop ~ $ pass remove Business/cheese-whiz-factory 
@@ -399,15 +384,6 @@ Overrides the default root of the git repository, which is helpful if
 \fIPASSWORD_STORE_DIR\fP is temporarily set to a sub-directory of the default
 password store.
 .TP
-.I PASSWORD_STORE_X_SELECTION
-Overrides the selection passed to \fBxclip\fP, by default \fIclipboard\fP. See
-.BR xclip (1)
-for more info.
-.TP
-.I PASSWORD_STORE_CLIP_TIME
-Specifies the number of seconds to wait before restoring the clipboard, by default
-\fI45\fP seconds.
-.TP
 .I PASSWORD_STORE_UMASK
 Sets the umask of all files modified by pass, by default \fI077\fP.
 .TP
@@ -417,7 +393,6 @@ The location of the text editor used by \fBedit\fP.
 .BR gpg2 (1),
 .BR pwgen (1),
 .BR git (1),
-.BR xclip (1).
 
 .SH AUTHOR
 .B pass

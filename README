@@ -17,8 +17,6 @@ Depends on:
   http://www.gnu.org/software/bash/
 - GnuPG2
   http://www.gnupg.org/
-- xclip
-  http://sourceforge.net/projects/xclip/
 - pwgen
   http://sourceforge.net/projects/pwgen/
 - tree >= 1.7.0

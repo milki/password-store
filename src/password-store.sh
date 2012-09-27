@@ -38,7 +38,7 @@ Usage:
     $program [show] [--clip,-c] pass-name
         Show existing password and optionally put it on the clipboard.
         If put on the clipboard, it will be cleared in 45 seconds.
-    $program insert [--no-echo,-n | --multiline,-m] [--force,-f] pass-name
+    $program insert [--no-echo,-n | --multiline,-m] [--force,-f] pass-name [pass-file]
         Insert new password. Optionally, the console can be enabled to not
         echo the password back. Or, optionally, it may be multiline. Prompt
         before overwriting existing password unless forced.
@@ -243,8 +243,8 @@ case "$command" in
 			--) shift; break ;;
 		esac done
 
-		if [[ $err -ne 0 || ( $multiline -eq 1 && $noecho -eq 1 ) || $# -ne 1 ]]; then
-			echo "Usage: $program $command [--no-echo,-n | --multiline,-m] [--force,-f] pass-name"
+		if [[ $err -ne 0 || ( $multiline -eq 1 && $noecho -eq 1 ) || ($# -ne 1 && $# -ne 2) ]]; then
+			echo "Usage: $program $command [--no-echo,-n | --multiline,-m] [--force,-f] pass-name [pass-file]"
 			exit 1
 		fi
 		path="$1"
@@ -258,6 +258,9 @@ case "$command" in
 			echo "Enter contents of $path and press Ctrl+D when finished:"
 			echo
 			$GPG -e -r "$ID" -o "$passfile" $GPG_OPTS
+		elif [[ $# -eq 2 ]]; then
+			echo "Using $2 as the password file"
+			$GPG -e -r "$ID" -o "$passfile" $GPG_OPTS $2
 		elif [[ $noecho -eq 1 ]]; then
 			while true; do
 				read -p "Enter password for $path: " -s password

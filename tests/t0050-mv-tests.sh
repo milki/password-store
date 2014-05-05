@@ -8,7 +8,6 @@ INITIAL_PASSWORD="bla bla bla will we make it!!"
 
 test_expect_success 'Basic move command' '
 	"$PASS" init $KEY1 &&
-	"$PASS" git init &&
 	"$PASS" insert -e cred1 <<<"$INITIAL_PASSWORD" &&
 	"$PASS" mv cred1 cred2 &&
 	[[ -e $PASSWORD_STORE_DIR/cred2.gpg && ! -e $PASSWORD_STORE_DIR/cred1.gpg ]]
@@ -42,10 +41,6 @@ test_expect_success 'Multi-directory creation and multi-directory empty removal'
 
 test_expect_success 'Password made it until the end' '
 	[[ $("$PASS" show cred) == "$INITIAL_PASSWORD" ]]
-'
-
-test_expect_success 'Git is consistent' '
-	[[ -z $(git status --porcelain 2>&1) ]]
 '
 
 test_done

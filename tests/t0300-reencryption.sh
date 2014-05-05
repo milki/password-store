@@ -21,8 +21,8 @@ gpg_keys_from_group() {
 	canonicalize_gpg_keys "${keys[@]}"
 }
 
-test_expect_success 'Setup initial key and git' '
-	"$PASS" init $KEY1 && "$PASS" git init
+test_expect_success 'Setup initial key' '
+	"$PASS" init $KEY1
 '
 
 test_expect_success 'Root key encryption' '
@@ -91,10 +91,6 @@ test_expect_success 'Reencryption subfolder multiple keys, move, deinit' '
 
 test_expect_success 'Password lived through all transformations' '
 	[[ $("$PASS" show anotherfolder2/anotherfolder/cred1) == "$INITIAL_PASSWORD" ]]
-'
-
-test_expect_success 'Git picked up all changes throughout' '
-	[[ -z $(git status --porcelain 2>&1) ]]
 '
 
 test_done
